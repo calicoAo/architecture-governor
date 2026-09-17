@@ -1,0 +1,6 @@
+interface:
+  display_name: "Engineering Architecture"
+  short_description: "Govern code ownership, boundaries, and maintainability"
+  default_prompt: "Review this non-trivial change for ownership and architecture, then implement it without overengineering."
+policy:
+  allow_implicit_invocation: true

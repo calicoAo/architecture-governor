@@ -1,0 +1,17 @@
+{
+  "entrypoints": [
+    { "path": "src/App.tsx", "warnLines": 350 },
+    { "path": "src/main.tsx", "warnLines": 250 }
+  ],
+  "aliases": {
+    "@/": "src/"
+  },
+  "boundaryRules": [
+    {
+      "name": "chat-must-not-reach-settings-internals",
+      "from": ["src/features/chat/**"],
+      "denyImports": ["src/features/settings/internal/**", "src/features/settings/_internal/**"],
+      "severity": "error"
+    }
+  ]
+}
