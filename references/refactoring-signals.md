@@ -12,9 +12,9 @@ Action: identify feature/workflow owners and migrate one coherent slice.
 
 ### Mega-component
 
-Signal: independent sections change for different reasons or require unrelated data/interaction context.
+Signal: independent sections change for different reasons or require unrelated data/interaction context. This includes the common post-refactor failure where a giant `App` is replaced by one giant `FeatureRoot`.
 
-Action: separate owners before extracting files.
+Action: separate internal workflow/interaction owners before extracting files; move state and lifecycle with those owners rather than only moving JSX.
 
 ### Shared dumping ground
 
@@ -54,7 +54,16 @@ Action: check whether horizontal technical layers are obscuring a vertical owner
 
 ## LOC signals
 
-Large files can indicate navigation/change-cost problems. Treat thresholds as warnings only.
+Large files can indicate navigation/change-cost problems. Treat thresholds as review triggers only.
+
+For React/Vue components, use roughly:
+
+- 400–500 LOC: mandatory cohesion review;
+- 800+ LOC: strong decomposition smell;
+- 1000+ LOC: presume internal decomposition is needed unless semantic cohesion is explicitly justified.
+
+These thresholds must not become automatic extraction or default CI-failure rules.
 
 A 700-line cohesive parser may be acceptable.
 A 180-line App that owns auth, routing, forms, requests, and modal workflows may already be architecturally overloaded.
+A 1000-line feature root is not justified merely because all code belongs to the same product feature.

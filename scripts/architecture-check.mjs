@@ -15,7 +15,7 @@ function parseArgs(argv) {
     else if (arg === '--help' || arg === '-h') {
       console.log(`Usage: architecture-check.mjs [--root PATH] [--config FILE] [--json] [--strict]\n\n` +
         `Default behavior is conservative: entrypoint line-count findings are warnings.\n` +
-        `Repository-specific import boundaries come from .architecture-guardrails.json.\n` +
+        `Repository-specific import boundaries and optional component cohesion-review surfaces come from .architecture-guardrails.json.\n` +
         `--strict exits non-zero for warnings as well as errors.`);
       process.exit(0);
     } else {
@@ -55,7 +55,8 @@ function loadConfig(args) {
       { path: 'src/main.jsx', warnLines: 250 }
     ],
     aliases: {},
-    boundaryRules: []
+    boundaryRules: [],
+    cohesionReview: []
   };
 
   const candidate = args.config ?? path.join(args.root, '.architecture-guardrails.json');
@@ -67,7 +68,8 @@ function loadConfig(args) {
     config: {
       entrypoints: user.entrypoints ?? defaultConfig.entrypoints,
       aliases: user.aliases ?? {},
-      boundaryRules: user.boundaryRules ?? []
+      boundaryRules: user.boundaryRules ?? [],
+      cohesionReview: user.cohesionReview ?? []
     }
   };
 }
@@ -138,6 +140,34 @@ function main() {
         file: normalize(ep.path),
         message: `${normalize(ep.path)} has ${lines} lines (warning threshold ${ep.warnLines}). Treat this as an ownership review signal, not an automatic split command.`
       });
+    }
+  }
+
+  const cohesionRules = config.cohesionReview ?? [];
+  if (cohesionRules.length) {
+    const files = walk(args.root, args.root);
+    for (const rule of cohesionRules) {
+      const matched = files.filter((file) => matchesAny(file, rule.files ?? []));
+      for (const file of matched) {
+        const lines = lineCount(path.join(args.root, file));
+        const warnLines = rule.warnLines ?? 500;
+        const strongLines = rule.strongWarnLines ?? 800;
+        if (lines > strongLines) {
+          findings.push({
+            severity: 'warn',
+            rule: rule.name ?? 'component-cohesion-strong-smell',
+            file,
+            message: `${file} has ${lines} lines (strong review threshold ${strongLines}). Perform feature-internal ownership/cohesion review; this is not an automatic split command.`
+          });
+        } else if (lines > warnLines) {
+          findings.push({
+            severity: 'warn',
+            rule: rule.name ?? 'component-cohesion-review',
+            file,
+            message: `${file} has ${lines} lines (review threshold ${warnLines}). Review semantic workflow/component ownership; line count alone is not a split reason.`
+          });
+        }
+      }
     }
   }
 

@@ -10,6 +10,26 @@ Do not move a component to `shared` merely because it is visually reusable-looki
 
 Promote when multiple independent verticals rely on the same stable semantic contract.
 
+## Feature ownership is not component ownership
+
+A correct feature boundary may still contain several independent component/workflow owners.
+
+Do not stop the ownership analysis at:
+
+```text
+App -> Feature
+```
+
+Continue recursively when evidence exists:
+
+```text
+App -> Feature -> Workflow -> Interaction/Presentation owner
+```
+
+A feature root should primarily compose major internal owners. It may coordinate truly shared feature state, but it should not become the default owner for every form, dialog, request, mutation, and rendering branch inside the feature.
+
+Read `component-decomposition.md` when a feature/page/workflow root contains multiple internal workflows or triggers a large-component cohesion review.
+
 ## Lowest visual owner
 
 Local interaction state should usually live in the lowest component that needs to coordinate it.
@@ -70,3 +90,11 @@ Split when a component has distinct owners/change reasons, for example:
 - independent sections that evolve/test separately.
 
 Do not split only because a file crossed an arbitrary LOC threshold.
+
+## Decomposition must move ownership
+
+Extracting JSX is not sufficient if the parent still owns all workflow state, handlers, validation, mutation logic, and lifecycle.
+
+Prefer moving a coherent state/behavior/rendering slice to its semantic internal owner. Keep state lifted only when the parent genuinely coordinates multiple children.
+
+LOC remains a review trigger rather than a split rule. For large feature roots, use the stronger review process in `component-decomposition.md`.

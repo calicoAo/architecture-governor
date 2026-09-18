@@ -15,11 +15,11 @@ Apply these across stacks unless the repository has a deliberate, documented exc
 
 1. **Respect existing architecture first.** Do not re-architect a mature repository merely because another pattern is familiar.
 2. **Ownership before placement.** Decide who owns behavior, state, data, interaction, and public contracts before deciding filenames or folders.
-3. **Keep entrypoints thin.** App roots, route files, bootstrap files, and composition roots should primarily wire the application rather than accumulate feature business logic.
+3. **Keep composition roots recursively composition-focused.** App roots compose features; feature roots compose workflows/major UI owners; workflow roots compose interaction/presentation owners. A correct feature owner must not become the next mega-component.
 4. **Prefer one canonical owner.** Avoid mirrored state, duplicate business rules, or effect-driven synchronization between competing owners.
 5. **Local first; promote by evidence.** Keep code with its feature/workflow owner until multiple independent consumers need a stable shared contract.
 6. **Use public module surfaces.** Cross-module consumers should not reach into another module's internals.
-7. **Split by responsibility and change reason, not line count.** LOC is a smell signal, never the architectural reason by itself.
+7. **Split by responsibility and change reason, not line count.** LOC is a smell signal, never the architectural reason by itself. Large components still trigger an explicit cohesion review so semantic sub-owners are not hidden inside a correct feature boundary.
 8. **Do not speculate layers into existence.** Create abstractions, adapters, repositories, wrappers, or shared utilities only when they own a real contract.
 9. **Make important boundaries durable.** When a violation is recurrent and mechanically detectable, add a guardrail rather than relying on prose alone.
 10. **Preserve requested behavior and scope.** Architecture work must support the task, not replace it with a rewrite.
@@ -105,6 +105,7 @@ Before implementation, be able to answer the relevant subset of:
 If these answers conflict, resolve the conflict before adding more code.
 
 For component-level work, read `references/component-ownership.md`.
+When a feature/page/workflow root remains large or owns multiple internal workflows, also read `references/component-decomposition.md`.
 For state/data questions, read `references/state-data-ownership.md`.
 
 ### 4. Choose placement from ownership
@@ -148,11 +149,28 @@ Prefer a vertical slice that keeps related UI/behavior/state/data/test changes u
 
 Avoid "architecture-first scaffolding" that creates many empty layers before a real contract exists.
 
-### 7. Run a conformance review
+### 7. Review internal component cohesion
+
+After establishing a feature/module owner, verify that the new owner did not simply become the next giant implementation file.
+
+For React/Vue feature roots, pages, route views, or workflow components, ask:
+
+- Is this unit primarily composing meaningful internal owners, or implementing all of them itself?
+- Does it contain multiple independent workflows, forms, dialogs, or state lifecycles?
+- Can one region change/test independently without understanding unrelated regions?
+- Did state move with the extracted owner, or does the root still own everything and forward props?
+
+Treat roughly 400–500 LOC as a mandatory cohesion-review signal, 800+ LOC as a strong smell, and 1000+ LOC as presumptively decomposable unless semantic cohesion is explicitly justified. These are review triggers, not automatic split rules or default CI failures.
+
+Read `references/component-decomposition.md` when any of these signals are present.
+
+### 8. Run a conformance review
 
 Before finishing a non-trivial change, ask:
 
 - Did an entrypoint gain feature business logic?
+- Did a feature/workflow root become a new mega-component after ownership was moved out of the app root?
+- Are multiple internal workflows still implemented in one component despite separate state/change lifecycles?
 - Did ownership move or duplicate accidentally?
 - Did one feature reach into another feature's internals?
 - Did `shared` receive feature-specific behavior?
@@ -163,7 +181,7 @@ Before finishing a non-trivial change, ask:
 
 Read `references/verification.md` for the full verification pass.
 
-### 8. Harden only when justified
+### 9. Harden only when justified
 
 Read `references/guardrail-selection.md` before adding architecture checks.
 
@@ -192,6 +210,9 @@ Migrate one coherent responsibility at a time and keep behavior verifiable.
 
 - "Enterprise" interpreted as maximum layering.
 - Every component receiving its own service/types/constants/utils files without need.
+- Moving a giant App into one giant Feature component and calling ownership complete.
+- Cosmetic extraction where the parent still owns all state/handlers and only forwards props.
+- Splitting by technical category (`useState` hook, handlers hook, effects hook) instead of semantic workflow ownership.
 - `shared/` used as a dumping ground.
 - A generic `utils/` layer hiding domain semantics.
 - One global store becoming the default owner for unrelated local state.
@@ -207,7 +228,8 @@ Load only what the task needs:
 
 - `references/architecture-decision-process.md` — system classification, mode selection, design sequence.
 - `references/module-boundaries.md` — module contracts, public surfaces, dependency direction.
-- `references/component-ownership.md` — component placement, interaction ownership, wrappers, effects.
+- `references/component-ownership.md` — component placement, interaction/state ownership, wrappers, effects.
+- `references/component-decomposition.md` — recursive composition roots, feature-internal workflow/component decomposition, cohesion-review triggers.
 - `references/state-data-ownership.md` — local, workflow, server, URL, persisted, cross-cutting state.
 - `references/frontend-profile.md` — React/Vue frontend guidance and thin route/entrypoint patterns.
 - `references/node-backend-profile.md` — Node/service boundaries and data-access placement.
@@ -224,6 +246,8 @@ Architecture work is complete when the requested behavior is implemented and:
 - dependency direction remains explainable;
 - no new duplicate source of truth was introduced;
 - the entrypoint/route did not become the accidental business owner;
+- a newly established feature owner did not simply become the next accidental mega-component;
+- major internal workflows/components have clear local owners where evidence supports decomposition;
 - durable decisions are recorded only if future work needs them;
 - relevant checks/tests pass;
 - any new guardrail protects a real recurrent boundary rather than enforcing personal taste.

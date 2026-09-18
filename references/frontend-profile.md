@@ -39,10 +39,13 @@ But preserve an established route/domain/package vocabulary when it is already c
 
 Within a feature, colocate only the subfolders actually needed. Do not pre-create `api/`, `hooks/`, `model/`, `utils/`, etc. for every feature.
 
+A feature root is a composition boundary, not a license to place the entire feature in one component. When a feature contains independent workflows or substantial interaction owners, decompose internally by semantic ownership. See `component-decomposition.md`.
+
 ## React
 
 - Keep server/query state distinct from local UI state.
 - Use component ownership rules before lifting state.
+- After moving behavior from `App`/route into a feature, review whether the feature root itself now contains multiple workflow/component owners.
 - Treat Effects as external synchronization, not general control flow.
 - Keep reusable primitives free of feature policy.
 - In frameworks with server/client component boundaries, preserve the framework's data/serialization constraints before applying generic patterns.

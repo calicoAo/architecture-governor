@@ -21,6 +21,8 @@ Check:
 - new behavior has one obvious owner;
 - state/data have one canonical owner;
 - route/app roots remain composition-focused;
+- feature/workflow roots remain composition-focused when they contain multiple semantic sub-owners;
+- component extraction moved state/lifecycle ownership instead of only moving JSX behind prop forwarding;
 - abstractions own a real contract;
 - shared code is actually shared semantically.
 
@@ -60,4 +62,5 @@ For a significant change, the final report should be able to state concisely:
 - which owner/boundary changed;
 - whether architecture docs changed;
 - which checks passed;
-- any intentional exception left behind.
+- any intentional exception left behind;
+- for large frontend roots, whether internal cohesion was reviewed and why any large unit was intentionally retained.

@@ -1,5 +1,7 @@
 # Real-World Validation
 
+Status: **v0.1 core validated; v0.1.1 component-decomposition patch regression-tested**
+
 This document records real-repository validation of the `engineering-architecture` skill.
 
 The goal of these cases was not to prove that the skill can generate architecture documents.
@@ -26,6 +28,8 @@ Stack: npm workspaces, React + Vite, Hono, Drizzle ORM, MySQL
 | Completion workflow audit            | Identify true cross-owner business invariants                                | PASS   |
 | Transaction ownership implementation | Establish precise workflow and transaction owners                            | PASS   |
 | Real MySQL / CI verification         | Prove transaction, retry and concurrency guarantees against real DB behavior | PASS   |
+| Decision Tools feature ownership     | Move ownership out of `App.tsx` without speculative layers                   | PASS   |
+| v0.1.1 cohesion-review fixture       | Warn on a ~1000 LOC feature root without failing by default                  | PASS   |
 
 The validation demonstrates that the skill can:
 
@@ -520,7 +524,7 @@ when not to introduce one
 
 ---
 
-# v0.1 conclusion
+# v0.1 core conclusion
 
 The initial validation objective is satisfied.
 
@@ -543,3 +547,73 @@ Further Skill rules should not be added speculatively.
 Future versions should be driven by new failure modes observed during normal repository development.
 
 The Skill now enters normal real-world use.
+
+---
+
+# v0.1.1 Component-Decomposition Regression
+
+## Failure mode observed in real use
+
+The Personal Workbench Decision Tools refactor established a valid feature owner and moved root state, handlers, and rendering out of `App.tsx` without introducing speculative abstractions.
+
+That architecture change passed at the repository/module level, but exposed a narrower failure mode:
+
+```text
+giant App
+-> valid feature owner
+-> giant FeatureRoot with multiple internal workflow/component owners
+```
+
+The implementation evidence was sufficient to add a recursive cohesion review. It was not a reason to invalidate or rerun the already completed repository/module/transaction validation.
+
+## New decision behavior
+
+The governor now reviews ownership recursively:
+
+```text
+Application root -> Feature owner
+Feature root     -> Workflow / major UI owner
+Workflow root    -> Interaction / presentation owner
+```
+
+Feature ownership is not component ownership. A valid extraction moves state, lifecycle, handlers, and rendering with the semantic owner instead of only moving JSX behind prop forwarding.
+
+Large React/Vue component LOC remains a review trigger:
+
+- roughly 400–500 LOC: explicit cohesion review;
+- 800+ LOC: strong decomposition smell;
+- 1000+ LOC: presume decomposition is useful unless semantic cohesion is explicitly justified.
+
+These thresholds are not automatic split rules or default CI hard failures. The policy still rejects tiny-component proliferation, hooks created only to hide lines, and generic service/repository/shared layers without a real contract.
+
+## Checker regression fixture
+
+Fixture: `src/features/decision-tools/DecisionToolsFeature.tsx` with 1001 lines.
+
+Configured rule:
+
+```json
+{
+  "cohesionReview": [
+    {
+      "name": "feature-root-cohesion-review",
+      "files": ["src/features/**/*.tsx"],
+      "warnLines": 500,
+      "strongWarnLines": 800
+    }
+  ]
+}
+```
+
+Expected and observed behavior:
+
+```text
+Architecture check: 0 error(s), 1 warning(s)
+[WARN] feature-root-cohesion-review: ... Perform feature-internal ownership/cohesion review; this is not an automatic split command.
+```
+
+The default command exits successfully. Existing configured import-boundary violations remain errors and continue to exit non-zero.
+
+## Rollout scope
+
+The new policy applies to the next architecture-sensitive slice and to explicit regression review of already-large feature roots. It does not by itself interrupt or rerun the Personal Workbench P3 backlog.

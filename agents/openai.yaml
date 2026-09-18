@@ -1,6 +1,6 @@
 interface:
   display_name: "Engineering Architecture"
-  short_description: "Govern code ownership, boundaries, and maintainability"
-  default_prompt: "Review this non-trivial change for ownership and architecture, then implement it without overengineering."
+  short_description: "Govern ownership, boundaries, and component cohesion"
+  default_prompt: "Use $engineering-architecture to review this non-trivial change for module and component ownership, then implement it without overengineering or creating a mega-component."
 policy:
   allow_implicit_invocation: true

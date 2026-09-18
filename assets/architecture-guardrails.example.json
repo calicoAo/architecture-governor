@@ -3,6 +3,14 @@
     { "path": "src/App.tsx", "warnLines": 350 },
     { "path": "src/main.tsx", "warnLines": 250 }
   ],
+  "cohesionReview": [
+    {
+      "name": "feature-root-cohesion-review",
+      "files": ["src/features/**/*.tsx"],
+      "warnLines": 500,
+      "strongWarnLines": 800
+    }
+  ],
   "aliases": {
     "@/": "src/"
   },
